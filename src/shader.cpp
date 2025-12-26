@@ -1,5 +1,6 @@
 #include <shader.h>
 
+#include <glad/glad.h>
 #include <string>
 
 namespace fs = std::filesystem;
@@ -89,6 +90,14 @@ Shader::Shader(const char *vertexPath, const char *fragPath)
     glDeleteShader(fragmentShader);
 }
 
+Shader::~Shader()
+{
+    if (isValid())
+    {
+        glDeleteProgram(ID);
+    }
+}
+
 void Shader::use()
 {
     glUseProgram(ID);
@@ -102,4 +111,8 @@ bool Shader::isValid()
 void Shader::setFloat(const std::string &name, float value)
 {
     glUniform1f(glGetUniformLocation(ID, name.c_str()), value);
+}
+
+void Shader::setColor(const std::string &name, Color value) {
+    glUniform4f(glGetUniformLocation(ID, name.c_str()), value.r, value.g, value.b, value.a);
 }

@@ -6,49 +6,8 @@ namespace fs = std::filesystem;
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void processInput(GLFWwindow *window);
 
-std::string readFile(std::string filename)
-{
-    // Open the file named "example.txt" for reading
-    auto currentpath = fs::current_path();
-    auto filepath = fs::path(filename);
-    std::ifstream inputFile(filepath);
-
-    std::string output = "";
-
-    std::string line;
-    // Check if the file was successfully opened
-    if (inputFile.is_open())
-    {
-        // Read lines from the file until the end is reached
-        while (std::getline(inputFile, line))
-        {
-            // Print each line to the console
-            output.append(line + "\n");
-        }
-        // Close the file stream
-        inputFile.close();
-    }
-    else
-    {
-        // Print an error message if the file couldn't be opened
-        std::cerr << "Unable to open file";
-    }
-    return output;
-}
-
 int main()
 {
-    Shader shader("src/shaders/vertices.vert","src/shaders/fragments.frag");
-
-    std::string vss = readFile("src/shaders/vertices.vert");
-    std::string fss = readFile("src/shaders/fragments.frag");
-
-    if (vss.empty() || fss.empty())
-    {
-        std::cerr << "Vertex or fragment shaders were invalid" << std::endl;
-        return -1;
-    }
-
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -70,49 +29,13 @@ int main()
         return -1;
     }
 
-    const char *vertexShaderSource = vss.c_str();
-    const char *fragmentShaderSource = fss.c_str();
+    Shader shader("src/shaders/vertices.vert","src/shaders/fragments.frag");
 
-    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-    glCompileShader(vertexShader);
-
-    int success;
-    char infoLog[512];
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-    if (!success)
+    if (!shader.isValid())
     {
-        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-        std::cerr << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n"
-                  << infoLog << std::endl;
+        std::cerr << "Vertex or fragment shaders were invalid" << std::endl;
+        return -1;
     }
-
-    unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-    glCompileShader(fragmentShader);
-
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-        std::cerr << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n"
-                  << infoLog << std::endl;
-    }
-
-    unsigned int shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-    if (!success)
-    {
-        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-        std::cerr << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n"
-                  << infoLog << std::endl;
-    }
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
 
     float vertices[] = {
         0.5f, 0.5f, 0.0f,   // top right
@@ -151,14 +74,12 @@ int main()
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glUseProgram(shaderProgram);
+        shader.use();
         float timeValue = glfwGetTime();
         float redValue = sin(timeValue) / 2.0f + 0.5f;
         float greenValue = sin(timeValue+15) / 2.0f + 0.5f;
         float blueValue = sin(timeValue+30) / 2.0f + 0.5f;
-        int vertexColorLocation = glGetUniformLocation(shaderProgram,
-                                                       "ourColor");
-        glUniform4f(vertexColorLocation, redValue, greenValue, blueValue, 1.0f);
+        shader.setColor("ourColor", Color{redValue, greenValue, blueValue, 1.0f});
         
         glBindVertexArray(VAO);
 
@@ -171,7 +92,6 @@ int main()
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
     glDeleteBuffers(1, &EBO);
-    glDeleteProgram(shaderProgram);
 
     glfwTerminate();
     return 0;
