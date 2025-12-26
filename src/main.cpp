@@ -1,5 +1,9 @@
 #include "config.h"
 #include <shader.h>
+#include <texture.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 namespace fs = std::filesystem;
 
@@ -29,7 +33,8 @@ int main()
         return -1;
     }
 
-    Shader shader("src/shaders/vertices.vert","src/shaders/fragments.frag");
+    // Shader shader("src/shaders/vertices.vert","src/shaders/fragments.frag");
+    Shader shader("src/shaders/rotated.vs", "src/shaders/textures.fs");
 
     if (!shader.isValid())
     {
@@ -37,11 +42,19 @@ int main()
         return -1;
     }
 
+    // float vertices[] = {
+    //     0.5f, 0.5f, 0.0f,   // top right
+    //     0.5f, -0.5f, 0.0f,  // bottom right
+    //     -0.5f, -0.5f, 0.0f, // bottom left
+    //     -0.5f, 0.5f, 0.0f   // top left
+    // };
+
     float vertices[] = {
-        0.5f, 0.5f, 0.0f,   // top right
-        0.5f, -0.5f, 0.0f,  // bottom right
-        -0.5f, -0.5f, 0.0f, // bottom left
-        -0.5f, 0.5f, 0.0f   // top left
+        // positions          // colors           // texture coords
+        0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f,   // top right
+        0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,  // bottom right
+        -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, // bottom left
+        -0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f   // top left
     };
 
     unsigned int indices[] = {
@@ -53,6 +66,7 @@ int main()
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
     glGenBuffers(1, &EBO);
+
     glBindVertexArray(VAO);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -61,12 +75,21 @@ int main()
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)0);
     glEnableVertexAttribArray(0);
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
 
-    glBindVertexArray(0);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+
+    Texture texture1("src/textures/container.jpg");
+    Texture texture2("src/textures/emoji.png", true);
+
+    shader.use();
+    shader.setInt("texture1", 0);
+    shader.setInt("texture2", 1);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -74,15 +97,24 @@ int main()
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        shader.use();
-        float timeValue = glfwGetTime();
-        float redValue = sin(timeValue) / 2.0f + 0.5f;
-        float greenValue = sin(timeValue+15) / 2.0f + 0.5f;
-        float blueValue = sin(timeValue+30) / 2.0f + 0.5f;
-        shader.setColor("ourColor", Color{redValue, greenValue, blueValue, 1.0f});
-        
-        glBindVertexArray(VAO);
+        glActiveTexture(GL_TEXTURE0);
+        texture1.bind();
+        glActiveTexture(GL_TEXTURE1);
+        texture2.bind();
 
+        glm::mat4 transform = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
+        transform = glm::translate(transform, glm::vec3(0.5f, -0.5f, 0.0f));
+        transform = glm::rotate(transform, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+
+        shader.use();
+        shader.setTransform("transform", transform);
+        // float timeValue = glfwGetTime();
+        // float redValue = sin(timeValue) / 2.0f + 0.5f;
+        // float greenValue = sin(timeValue+15) / 2.0f + 0.5f;
+        // float blueValue = sin(timeValue+30) / 2.0f + 0.5f;
+        // shader.setColor("ourColor", Color{redValue, greenValue, blueValue, 1.0f});
+
+        glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window);

@@ -10,6 +10,8 @@ add_executable(opengl_renderer
     src/config.h 
     src/glad.c
     src/shader.cpp
+    src/stb.cpp
+    src/texture.cpp
     src/main.cpp)
 
 target_include_directories(opengl_renderer PRIVATE include dependencies)

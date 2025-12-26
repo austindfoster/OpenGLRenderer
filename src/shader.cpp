@@ -1,6 +1,11 @@
 #include <shader.h>
 
 #include <glad/glad.h>
+#include <glm/gtc/type_ptr.hpp>
+
+#include <fstream>
+#include <sstream>
+#include <iostream>
 #include <string>
 
 namespace fs = std::filesystem;
@@ -113,6 +118,18 @@ void Shader::setFloat(const std::string &name, float value)
     glUniform1f(glGetUniformLocation(ID, name.c_str()), value);
 }
 
-void Shader::setColor(const std::string &name, Color value) {
+void Shader::setInt(const std::string &name, int value)
+{
+    glUniform1i(glGetUniformLocation(ID, name.c_str()), value);
+}
+
+void Shader::setColor(const std::string &name, Color value)
+{
     glUniform4f(glGetUniformLocation(ID, name.c_str()), value.r, value.g, value.b, value.a);
+}
+
+void Shader::setTransform(const std::string &name, glm::mat4 matrix)
+{
+    unsigned int transformLoc = glGetUniformLocation(ID, name.c_str());
+    glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(matrix));
 }

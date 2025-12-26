@@ -1,9 +1,10 @@
-#include <string>
-#include <fstream>
-#include <sstream>
-#include <iostream>
+#pragma once
 
-struct Color {
+#include <glm/glm.hpp>
+#include <string>
+
+struct Color
+{
     float r;
     float g;
     float b;
@@ -19,7 +20,9 @@ public:
     void use();
     bool isValid();
     void setFloat(const std::string &name, float value);
+    void setInt(const std::string &name, int value);
     void setColor(const std::string &name, Color value);
+    void setTransform(const std::string &name, glm::mat4 matrix);
 
 private:
     unsigned int ID = -1;
