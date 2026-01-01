@@ -1,5 +1,7 @@
 #pragma once
 
+#include <texture.h>
+
 #include <glm/glm.hpp>
 #include <string>
 
@@ -24,6 +26,10 @@ public:
     void setColor(const std::string &name, Color value);
     void setTransform(const std::string &name, glm::mat4 matrix);
 
+    int addTexture(const char * path, bool hasAlpha = false);
+    void bindTextures();
+
 private:
+    std::vector<Texture> m_textures;
     unsigned int ID = -1;
 };

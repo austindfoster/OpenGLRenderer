@@ -1,5 +1,7 @@
 #include "config.h"
 #include <camera.h>
+#include <mesh.h>
+#include <modelinfo.h>
 #include <shader.h>
 #include <texture.h>
 
@@ -55,8 +57,9 @@ int main()
 
     glEnable(GL_DEPTH_TEST);
 
-    Shader shader("src/shaders/textured.vs", "src/shaders/textured.fs");
-    // Shader litShader("src/shaders/textured.vs", "src/shaders/lit.fs");
+    // Shader shader("src/shaders/textured.vs", "src/shaders/textured.fs");
+    Shader shader("src/shaders/vertices.vs", "src/shaders/lit.fs");
+    Shader lightShader("src/shaders/vertices.vs", "src/shaders/light.fs");
 
     if (!shader.isValid())
     {
@@ -64,48 +67,11 @@ int main()
         return -1;
     }
 
-    float vertices[] = {
-        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
-        0.5f, -0.5f, -0.5f, 1.0f, 0.0f,
-        0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
-        0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
-        -0.5f, 0.5f, -0.5f, 0.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
-
-        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
-        0.5f, -0.5f, 0.5f, 1.0f, 0.0f,
-        0.5f, 0.5f, 0.5f, 1.0f, 1.0f,
-        0.5f, 0.5f, 0.5f, 1.0f, 1.0f,
-        -0.5f, 0.5f, 0.5f, 0.0f, 1.0f,
-        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
-
-        -0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
-        -0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
-        -0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
-
-        0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
-        0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
-        0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-        0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-        0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
-        0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
-
-        -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-        0.5f, -0.5f, -0.5f, 1.0f, 1.0f,
-        0.5f, -0.5f, 0.5f, 1.0f, 0.0f,
-        0.5f, -0.5f, 0.5f, 1.0f, 0.0f,
-        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
-        -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-
-        -0.5f, 0.5f, -0.5f, 0.0f, 1.0f,
-        0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
-        0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
-        0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
-        -0.5f, 0.5f, 0.5f, 0.0f, 0.0f,
-        -0.5f, 0.5f, -0.5f, 0.0f, 1.0f};
+    Mesh mesh;
+    std::vector<float> verts;
+    verts.assign(vertices, vertices + std::size(vertices));
+    mesh.setVertices(verts);
+    mesh.addShader(shader);
 
     unsigned int VAO, VBO;
     glGenVertexArrays(1, &VAO);
@@ -116,32 +82,27 @@ int main()
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
+    // If mesh has uvs, modify size to buffer 2 more values
 
-    Texture texture1("src/textures/container.jpg");
-    Texture texture2("src/textures/emoji.png", true);
+    // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
+    // glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
+    // glEnableVertexAttribArray(1);
 
-    shader.use();
-    shader.setInt("texture1", 0);
-    shader.setInt("texture2", 1);
+    // shader.addTexture("src/textures/container.jpg");
+    // shader.addTexture("src/textures/emoji.png", true);
+
+    // shader.use();
+    // shader.setInt("texture1", 0);
+    // shader.setInt("texture2", 1);
 
     Camera camera;
 
-    glm::vec3 cubePositions[] = {
-        glm::vec3(0.0f, 0.0f, 0.0f),
-        glm::vec3(2.0f, 5.0f, -15.0f),
-        glm::vec3(-1.5f, -2.2f, -2.5f),
-        glm::vec3(-3.8f, -2.0f, -12.3f),
-        glm::vec3(2.4f, -0.4f, -3.5f),
-        glm::vec3(-1.7f, 3.0f, -7.5f),
-        glm::vec3(1.3f, -2.0f, -2.5f),
-        glm::vec3(1.5f, 2.0f, -2.5f),
-        glm::vec3(1.5f, 0.2f, -1.5f),
-        glm::vec3(-1.3f, 1.0f, -1.5f)};
+    glm::vec3 cubePositions[] = {glm::vec3(0.0f, 0.0f, 0.0f),};
+
+    glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
 
     float deltaTime, lastFrame = 0.0f;
 
@@ -163,34 +124,45 @@ int main()
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glActiveTexture(GL_TEXTURE0);
-        texture1.bind();
-        glActiveTexture(GL_TEXTURE1);
-        texture2.bind();
+        // shader.bindTextures();
 
         shader.use();
+        shader.setColor("objColor", Color{0.41f, 0.26f, 0.18f, 1.0f});
+        shader.setColor("lightColor", Color{1.0f, 1.0f, 1.0f, 1.0f});
+
         // create transformations
         glm::mat4 projection = glm::perspective(camera.getFOV(), (float)SCRN_WIDTH / (float)SCRN_HEIGHT, 0.1f, 100.0f);
-        shader.setTransform("projection", projection);
         glm::mat4 view = camera.getView();
+        shader.setTransform("projection", projection);
         shader.setTransform("view", view);
 
         glBindVertexArray(VAO);
-        for (unsigned int i = 0; i < 10; i++)
+        for (unsigned int i = 0; i < std::size(cubePositions); i++)
         {
             glm::mat4 model = glm::mat4(1.0f);
             model = glm::translate(model, cubePositions[i]);
-            float angle = 20.0f * i;
-            model = glm::rotate(model, glm::radians(angle), glm::vec3(0.5f, 1.0f, 0.0f));
             shader.setTransform("model", model);
 
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
+
+        lightShader.use();
+        lightShader.setTransform("projection", projection);
+        lightShader.setTransform("view", view);
+        glm::mat4 m = glm::mat4(1.0f);
+        m = glm::translate(m, lightPos);
+        m = glm::scale(m, glm::vec3(0.2f)); // a smaller cube
+        lightShader.setTransform("model", m);
+
+        glBindVertexArray(lightVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
     glDeleteVertexArrays(1, &VAO);
+    glDeleteVertexArrays(1, &lightVAO);
     glDeleteBuffers(1, &VBO);
 
     glfwTerminate();

@@ -9,6 +9,8 @@ find_package(OpenGL REQUIRED)
 add_executable(opengl_renderer 
     src/config.h 
     src/glad.c
+    src/camera.cpp
+    src/mesh.cpp
     src/shader.cpp
     src/stb.cpp
     src/texture.cpp

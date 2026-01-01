@@ -25,10 +25,8 @@ Camera::Camera() : m_transform(CAMERA_POS),
 
 void Camera::moveCamera(glm::vec3 direction, float deltaTime)
 {
-    printf("Direction: (%.2f, %.2f, %.2f)\n", direction[0], direction[1], direction[2]);
     m_transform[3] += glm::vec4(m_speed * deltaTime * direction, 0.0f);
     auto position = m_transform[3];
-    printf("Position: (%.2f, %.2f, %.2f)\n", position[0], position[1], position[2]);
 }
 
 void Camera::rotateCamera(glm::vec3 axis, float angle, float deltaTime)
@@ -80,9 +78,6 @@ float Camera::getFOV()
 glm::mat4 Camera::getView()
 {
     glm::vec3 position = m_transform[3];
-    // printf("Position: (%.2f, %.2f, %.2f)\n", position[0], position[1], position[2]);
-    // printf("Front: (%.2f, %.2f, %.2f)\n", m_front[0], m_front[1], m_front[2]);
-    // printf("Cam Up: (%.2f, %.2f, %.2f)\n", m_cameraUp[0], m_cameraUp[1], m_cameraUp[2]);
     return glm::lookAt(position, position + m_front, m_cameraUp);
 }
 

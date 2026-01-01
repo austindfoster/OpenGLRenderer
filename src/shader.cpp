@@ -133,3 +133,18 @@ void Shader::setTransform(const std::string &name, glm::mat4 matrix)
     unsigned int transformLoc = glGetUniformLocation(ID, name.c_str());
     glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(matrix));
 }
+
+int Shader::addTexture(const char *path, bool hasAlpha)
+{
+    Texture texture(path, hasAlpha);
+    m_textures.push_back(texture);
+    return m_textures.size();
+}
+
+void Shader::bindTextures()
+{
+    for (int i = 0; i < m_textures.size(); i++) {
+        glActiveTexture(GL_TEXTURE0+i);
+        m_textures[i].bind();
+    }
+}
