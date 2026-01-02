@@ -1,7 +1,5 @@
 #pragma once
 
-#include <texture.h>
-
 #include <glm/glm.hpp>
 #include <string>
 
@@ -23,13 +21,12 @@ public:
     bool isValid();
     void setFloat(const std::string &name, float value);
     void setInt(const std::string &name, int value);
-    void setColor(const std::string &name, Color value);
+    void setVec3(const std::string &name, glm::vec3 value);
     void setTransform(const std::string &name, glm::mat4 matrix);
 
-    int addTexture(const char * path, bool hasAlpha = false);
+    int addTexture(unsigned int textureID);
     void bindTextures();
 
-private:
-    std::vector<Texture> m_textures;
+    std::vector<unsigned int> m_textureIDs;
     unsigned int ID = -1;
 };

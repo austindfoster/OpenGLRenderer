@@ -123,9 +123,9 @@ void Shader::setInt(const std::string &name, int value)
     glUniform1i(glGetUniformLocation(ID, name.c_str()), value);
 }
 
-void Shader::setColor(const std::string &name, Color value)
+void Shader::setVec3(const std::string &name, glm::vec3 value)
 {
-    glUniform4f(glGetUniformLocation(ID, name.c_str()), value.r, value.g, value.b, value.a);
+    glUniform3f(glGetUniformLocation(ID, name.c_str()), value.x, value.y, value.z);
 }
 
 void Shader::setTransform(const std::string &name, glm::mat4 matrix)
@@ -134,17 +134,17 @@ void Shader::setTransform(const std::string &name, glm::mat4 matrix)
     glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(matrix));
 }
 
-int Shader::addTexture(const char *path, bool hasAlpha)
+int Shader::addTexture(unsigned int textureID)
 {
-    Texture texture(path, hasAlpha);
-    m_textures.push_back(texture);
-    return m_textures.size();
+    m_textureIDs.push_back(textureID);
+    return m_textureIDs.size();
 }
 
 void Shader::bindTextures()
 {
-    for (int i = 0; i < m_textures.size(); i++) {
-        glActiveTexture(GL_TEXTURE0+i);
-        m_textures[i].bind();
+    for (int i = 0; i < m_textureIDs.size(); i++)
+    {
+        glActiveTexture(GL_TEXTURE0 + i);
+        glBindTexture(GL_TEXTURE_2D, m_textureIDs[i]);
     }
 }

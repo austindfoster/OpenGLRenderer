@@ -1,9 +1,10 @@
 #include "config.h"
 #include <camera.h>
-#include <mesh.h>
+#include <light.h>
+#include <loadTextures.h>
+#include <model.h>
 #include <modelinfo.h>
 #include <shader.h>
-#include <texture.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -57,8 +58,7 @@ int main()
 
     glEnable(GL_DEPTH_TEST);
 
-    // Shader shader("src/shaders/textured.vs", "src/shaders/textured.fs");
-    Shader shader("src/shaders/vertices.vs", "src/shaders/lit.fs");
+    Shader shader("src/shaders/masks.vs", "src/shaders/material.fs");
     Shader lightShader("src/shaders/vertices.vs", "src/shaders/light.fs");
 
     if (!shader.isValid())
@@ -67,50 +67,24 @@ int main()
         return -1;
     }
 
-    Mesh mesh;
-    std::vector<float> verts;
-    verts.assign(vertices, vertices + std::size(vertices));
-    mesh.setVertices(verts);
-    mesh.addShader(shader);
-
-    unsigned int VAO, VBO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-
-    glBindVertexArray(VAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
-    glEnableVertexAttribArray(0);
-
-    // If mesh has uvs, modify size to buffer 2 more values
-
-    // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
-    // glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
-    // glEnableVertexAttribArray(1);
-
-    // shader.addTexture("src/textures/container.jpg");
-    // shader.addTexture("src/textures/emoji.png", true);
-
-    // shader.use();
-    // shader.setInt("texture1", 0);
-    // shader.setInt("texture2", 1);
+    std::string modelPath = std::filesystem::path("src/models/ellie_animation.obj");
+    Model backpack(modelPath);
 
     Camera camera;
 
-    glm::vec3 cubePositions[] = {glm::vec3(0.0f, 0.0f, 0.0f),};
+    glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f);
 
-    glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
+    Light light;
 
     float deltaTime, lastFrame = 0.0f;
 
-    // set up lighting
-    unsigned int lightVAO;
+    // // set up lighting
+    unsigned int lightVAO, VBO;
     glGenVertexArrays(1, &lightVAO);
+    glGenBuffers(1, &VBO);
     glBindVertexArray(lightVAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float),
                           (void *)0);
     glEnableVertexAttribArray(0);
@@ -124,11 +98,19 @@ int main()
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // shader.bindTextures();
+        shader.bindTextures();
 
         shader.use();
-        shader.setColor("objColor", Color{0.41f, 0.26f, 0.18f, 1.0f});
-        shader.setColor("lightColor", Color{1.0f, 1.0f, 1.0f, 1.0f});
+        shader.setVec3("light.position", light.position);
+        shader.setVec3("viewPos", camera.getPosition());
+
+        // light properties
+        glm::vec3 lightColor = {1.0f, 1.0f, 1.0f};
+        glm::vec3 diffuseColor = lightColor; // decrease the influence
+        glm::vec3 ambientColor = diffuseColor * glm::vec3(0.2f); // low influence
+        shader.setVec3("light.ambient", ambientColor);
+        shader.setVec3("light.diffuse", diffuseColor);
+        shader.setVec3("light.specular", {1.0f, 1.0f, 1.0f});
 
         // create transformations
         glm::mat4 projection = glm::perspective(camera.getFOV(), (float)SCRN_WIDTH / (float)SCRN_HEIGHT, 0.1f, 100.0f);
@@ -136,21 +118,17 @@ int main()
         shader.setTransform("projection", projection);
         shader.setTransform("view", view);
 
-        glBindVertexArray(VAO);
-        for (unsigned int i = 0; i < std::size(cubePositions); i++)
-        {
-            glm::mat4 model = glm::mat4(1.0f);
-            model = glm::translate(model, cubePositions[i]);
-            shader.setTransform("model", model);
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, position);
+        shader.setTransform("model", model);
 
-            glDrawArrays(GL_TRIANGLES, 0, 36);
-        }
+        backpack.draw(shader);
 
         lightShader.use();
         lightShader.setTransform("projection", projection);
         lightShader.setTransform("view", view);
         glm::mat4 m = glm::mat4(1.0f);
-        m = glm::translate(m, lightPos);
+        m = glm::translate(m, light.position);
         m = glm::scale(m, glm::vec3(0.2f)); // a smaller cube
         lightShader.setTransform("model", m);
 
@@ -161,7 +139,6 @@ int main()
         glfwPollEvents();
     }
 
-    glDeleteVertexArrays(1, &VAO);
     glDeleteVertexArrays(1, &lightVAO);
     glDeleteBuffers(1, &VBO);
 

@@ -11,14 +11,14 @@ const glm::mat4 CAMERA_POS({1.0f, 0.0f, 0.0f, 0.0f,   // Column 0
                             0.0f, 0.0f, 3.0f, 1.0f}); // Column 3
 const glm::vec3 CAMERA_FRONT = glm::vec3(0.0f, 0.0f, -1.0f);
 const glm::vec3 CAMERA_UP = glm::vec3(0.0f, 1.0f, 0.0f);
-
+const float MOVE_SPEED = 5.0f;
 const float CAMERA_FOV = glm::radians(45.0f);
 
 Camera::Camera() : m_transform(CAMERA_POS),
                    m_front(CAMERA_FRONT),
                    m_cameraUp(CAMERA_UP),
-                   m_speed(2.5f),
-                   m_rotSpeed(2.5f),
+                   m_speed(MOVE_SPEED),
+                   m_rotSpeed(MOVE_SPEED),
                    m_fov(CAMERA_FOV)
 {
 }
@@ -89,4 +89,9 @@ glm::vec3 Camera::getFront()
 glm::vec3 Camera::getCameraUp()
 {
     return m_cameraUp;
+}
+
+glm::vec3 Camera::getPosition()
+{
+    return m_transform[3];
 }

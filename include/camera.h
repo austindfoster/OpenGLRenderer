@@ -20,6 +20,7 @@ public:
     glm::mat4 getView();
     glm::vec3 getFront();
     glm::vec3 getCameraUp();
+    glm::vec3 getPosition();
 
 
 private:
