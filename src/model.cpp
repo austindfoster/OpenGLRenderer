@@ -115,6 +115,7 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
     aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
 
     aiColor3D diffuse, specular, ambient, emmisive, transparent, reflective;
+    
     material->Get(AI_MATKEY_COLOR_DIFFUSE, diffuse);
     material->Get(AI_MATKEY_COLOR_SPECULAR, specular);
     material->Get(AI_MATKEY_COLOR_AMBIENT, ambient);
@@ -143,7 +144,7 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
     textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
 
     // return a mesh object created from the extracted mesh data
-    return Mesh(vertices, indices, textures);
+    return Mesh(vertices, indices, mat, textures);
 }
 
 std::vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type, std::string typeName)
@@ -167,7 +168,7 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType 
         if (!skip)
         { // if texture hasn't been loaded already, load it
             Texture texture;
-            texture.id = loadTexture(str.C_Str(), this->directory);
+            texture.id = loadTexture(str.C_Str());
             texture.type = typeName;
             texture.path = str.C_Str();
             textures.push_back(texture);

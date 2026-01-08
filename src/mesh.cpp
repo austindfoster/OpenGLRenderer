@@ -5,10 +5,11 @@
 #include <glm/glm.hpp>
 #include <glad/glad.h>
 
-Mesh::Mesh(std::vector<Vertex> vertexList, std::vector<unsigned int> indexList, std::vector<Texture> textureList)
+Mesh::Mesh(std::vector<Vertex> vertexList, std::vector<unsigned int> indexList, Material mat, std::vector<Texture> textureList)
 {
     vertices = vertexList;
     indices = indexList;
+    material = mat;
     textures = textureList;
 
     // now that we have all the required data, set the vertex buffers and its attribute pointers.
@@ -46,9 +47,9 @@ void Mesh::draw(Shader &shader)
     }
     else
     {
-        shader.setVec3("material.ambient", {1.0f, 1.0f, 1.0f});
-        shader.setVec3("material.diffuse", {0.800000f, 0.077166f, 0.737119f});
-        shader.setVec3("material.specular", {0.5f, 0.5f, 0.5f});
+        shader.setVec3("material.diffuse", material.diffuse);
+        shader.setVec3("material.specular", material.specular);
+        shader.setVec3("material.ambient", material.ambient);
     }
     shader.setFloat("material.shininess", 32.0f);
 

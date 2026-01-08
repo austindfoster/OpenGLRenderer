@@ -5,10 +5,9 @@
 
 #include <iostream>
 
-unsigned int loadTexture(const char *path, const std::string &directory)
+unsigned int loadTexture(const char *path)
 {
     std::string filename = std::string(path);
-    filename = directory + '/' + filename;
 
     unsigned int textureID;
     glGenTextures(1, &textureID);

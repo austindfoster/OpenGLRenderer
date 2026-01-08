@@ -3,6 +3,7 @@
 #include <light.h>
 #include <loadTextures.h>
 #include <model.h>
+#include <modes.h>
 #include <modelinfo.h>
 #include <shader.h>
 
@@ -17,9 +18,13 @@ const glm::vec3 CAMERA_START_POS = glm::vec3(0.0f, 0.0f, 3.0f);
 glm::vec3 CAMERA_POS = CAMERA_START_POS;
 const glm::vec3 CAMERA_FRONT = glm::vec3(0.0f, 0.0f, -1.0f);
 const glm::vec3 CAMERA_UP = glm::vec3(0.0f, 1.0f, 0.0f);
+const glm::vec4 BACKGROUND_COLOR = {0.2f, 0.2f, 0.278f, 1.0f};
+bool wireframe = false;
+Mode mode = Mode::CAMERA_FLIGHT;
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void processInput(GLFWwindow *window, float deltaTime, Camera &camera);
+void cameraFlightInput(GLFWwindow *window, float deltaTime, Camera &camera);
 
 glm::mat4 circleCameraAroundPoint(float radius, glm::vec3 point)
 {
@@ -31,6 +36,16 @@ glm::mat4 circleCameraAroundPoint(float radius, glm::vec3 point)
 glm::mat4 circleCameraAroundCenter(float radius)
 {
     return circleCameraAroundPoint(radius, glm::vec3(0.0f, 0.0f, 0.0f));
+}
+
+void toggleWireframe(GLFWwindow *window, int key, int scancode, int action, int mods)
+{
+    if (key == GLFW_KEY_SLASH && action == GLFW_PRESS)
+    {
+        wireframe = !wireframe;
+        wireframe ? glPolygonMode(GL_FRONT_AND_BACK, GL_LINE) : glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        printf("Wireframe: %s\n", wireframe ? "ON" : "OFF");
+    }
 }
 
 int main()
@@ -58,7 +73,7 @@ int main()
 
     glEnable(GL_DEPTH_TEST);
 
-    Shader shader("src/shaders/masks.vs", "src/shaders/material.fs");
+    Shader shader("src/shaders/masks.vs", "src/shaders/masks.fs");
     Shader lightShader("src/shaders/vertices.vs", "src/shaders/light.fs");
 
     if (!shader.isValid())
@@ -67,7 +82,7 @@ int main()
         return -1;
     }
 
-    std::string modelPath = std::filesystem::path("src/models/ellie_animation.obj");
+    std::string modelPath = std::filesystem::path("src/models/backpack/backpack.obj");
     Model backpack(modelPath);
 
     Camera camera;
@@ -95,7 +110,7 @@ int main()
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
         processInput(window, deltaTime, camera);
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClearColor(BACKGROUND_COLOR.r, BACKGROUND_COLOR.g, BACKGROUND_COLOR.b, BACKGROUND_COLOR.a);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         shader.bindTextures();
@@ -105,8 +120,11 @@ int main()
         shader.setVec3("viewPos", camera.getPosition());
 
         // light properties
-        glm::vec3 lightColor = {1.0f, 1.0f, 1.0f};
-        glm::vec3 diffuseColor = lightColor; // decrease the influence
+        glm::vec3 lightColor = light.color;
+        // lightColor.r = static_cast<float>(sin(glfwGetTime() * 2.0));
+        // lightColor.g = static_cast<float>(sin(glfwGetTime() * 0.7));
+        // lightColor.b = static_cast<float>(sin(glfwGetTime() * 1.3));
+        glm::vec3 diffuseColor = lightColor * glm::vec3(0.5f);   // decrease the influence
         glm::vec3 ambientColor = diffuseColor * glm::vec3(0.2f); // low influence
         shader.setVec3("light.ambient", ambientColor);
         shader.setVec3("light.diffuse", diffuseColor);
@@ -155,22 +173,37 @@ void processInput(GLFWwindow *window, float deltaTime, Camera &camera)
     {
         if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
             camera.resetCamera();
+        return;
     }
 
+    glfwSetKeyCallback(window, toggleWireframe);
+    switch (mode)
+    {
+    case Mode::CAMERA_FLIGHT:
+        cameraFlightInput(window, deltaTime, camera);
+        break;
+    default:
+        break;
+    }
+}
+
+void cameraFlightInput(GLFWwindow *window, float deltaTime, Camera &camera)
+{
     if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
     {
+        float angle = 45.0f;
         if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
-            camera.rotateCamera(glm::normalize(glm::cross(camera.getFront(), camera.getCameraUp())), 5.0f, deltaTime);
+            camera.rotateCamera(glm::normalize(glm::cross(camera.getFront(), camera.getCameraUp())), angle, deltaTime);
         if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-            camera.rotateCamera(glm::normalize(glm::cross(camera.getFront(), camera.getCameraUp())), -5.0f, deltaTime);
+            camera.rotateCamera(glm::normalize(glm::cross(camera.getFront(), camera.getCameraUp())), -angle, deltaTime);
         if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-            camera.rotateCamera(camera.getCameraUp(), 5.0f, deltaTime);
+            camera.rotateCamera(camera.getCameraUp(), angle, deltaTime);
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-            camera.rotateCamera(camera.getCameraUp(), -5.0f, deltaTime);
+            camera.rotateCamera(camera.getCameraUp(), -angle, deltaTime);
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-            camera.rotateCamera(camera.getFront(), 5.0f, deltaTime);
+            camera.rotateCamera(camera.getFront(), angle, deltaTime);
         if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-            camera.rotateCamera(camera.getFront(), -5.0f, deltaTime);
+            camera.rotateCamera(camera.getFront(), -angle, deltaTime);
         return;
     }
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)

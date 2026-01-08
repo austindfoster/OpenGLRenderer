@@ -2,4 +2,4 @@
 
 #include <string>
 
-unsigned int loadTexture(const char *path, const std::string &directory);
+unsigned int loadTexture(const char *path);
