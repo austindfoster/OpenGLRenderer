@@ -1,28 +1,36 @@
+#include "material.h"
 #include <mesh.h>
 
 #include <shader.h>
+#include <customShader.h>
+#include <iostream>
 
 #include <glm/glm.hpp>
 #include <glad/glad.h>
 
-Mesh::Mesh(std::vector<Vertex> vertexList, std::vector<unsigned int> indexList, Material mat, std::vector<Texture> textureList)
-{
-    vertices = vertexList;
-    indices = indexList;
-    material = mat;
-    textures = textureList;
+constexpr std::string SHADERS_DIR = "src/shaders/";
+constexpr std::string DEFAULT_VERTEX_SHADER = "masks.vs";
 
+Mesh::Mesh(std::vector<Vertex> vertexList, std::vector<unsigned int> indexList, Material mat, std::vector<Texture> textureList, Shader *shader) : vertices(vertexList), indices(indexList), material(mat), textures(textureList), shader(shader)
+{
     // now that we have all the required data, set the vertex buffers and its attribute pointers.
     setupMesh();
 }
 
-void Mesh::draw(Shader &shader)
+void Mesh::draw()
 {
+    if (!shader) {
+        std::cerr << "No shader available on mesh" << std::endl;
+        return;
+    }
     // bind appropriate textures
     unsigned int diffuseNr = 1;
     unsigned int specularNr = 1;
     unsigned int normalNr = 1;
     unsigned int heightNr = 1;
+    shader->setVec3("material.diffuse", material.diffuse);
+    shader->setVec3("material.specular", material.specular);
+    shader->setVec3("material.ambient", material.ambient);
     if (!textures.empty())
     {
         for (unsigned int i = 0; i < textures.size(); i++)
@@ -40,18 +48,12 @@ void Mesh::draw(Shader &shader)
                 number = std::to_string(heightNr++); // transfer unsigned int to string
 
             // now set the sampler to the correct texture unit
-            glUniform1i(glGetUniformLocation(shader.ID, (name + number).c_str()), i);
+            glUniform1i(glGetUniformLocation(shader->ID, (name + number).c_str()), i);
             // and finally bind the texture
             glBindTexture(GL_TEXTURE_2D, textures[i].id);
         }
     }
-    else
-    {
-        shader.setVec3("material.diffuse", material.diffuse);
-        shader.setVec3("material.specular", material.specular);
-        shader.setVec3("material.ambient", material.ambient);
-    }
-    shader.setFloat("material.shininess", 32.0f);
+    shader->setFloat("material.shininess", 32.0f);
 
     // draw mesh
     glBindVertexArray(VAO);
@@ -60,6 +62,10 @@ void Mesh::draw(Shader &shader)
 
     // always good practice to set everything back to defaults once configured.
     glActiveTexture(GL_TEXTURE0);
+}
+
+void Mesh::setShader(Shader *shdr) {
+    shader = shdr;
 }
 
 void Mesh::setupMesh()
@@ -101,4 +107,20 @@ void Mesh::setupMesh()
     glEnableVertexAttribArray(6);
     glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, weights));
     glBindVertexArray(0);
+}
+
+void Mesh::buildOptimalShader() {
+    std::string vertexShaderFileName = SHADERS_DIR + DEFAULT_VERTEX_SHADER;
+    std::string customFileName = writeCustomShader(material, textures, true);
+    std::vector<std::string> fileNames = getFilesInDirectory(SHADERS_DIR);
+    bool isIdentical = false;
+    for (auto fileName : fileNames) {
+        isIdentical = compareFiles(SHADERS_DIR + fileName, customFileName);
+        if (isIdentical) {
+            shader = new Shader(vertexShaderFileName.c_str(), (SHADERS_DIR + fileName).c_str());
+            removeShaderFile(customFileName);
+            return;
+        }
+    }
+    shader = new Shader(vertexShaderFileName.c_str(), customFileName.c_str());
 }

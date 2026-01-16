@@ -1,5 +1,6 @@
 #include "config.h"
 #include <camera.h>
+#include <customShader.h>
 #include <light.h>
 #include <loadTextures.h>
 #include <model.h>
@@ -9,8 +10,6 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-
-namespace fs = std::filesystem;
 
 const uint SCRN_WIDTH = 800;
 const uint SCRN_HEIGHT = 600;
@@ -73,17 +72,12 @@ int main()
 
     glEnable(GL_DEPTH_TEST);
 
-    Shader shader("src/shaders/masks.vs", "src/shaders/masks.fs");
+    Shader *defaultShader = new Shader("src/shaders/masks.vs", "src/shaders/custom.fs");
     Shader lightShader("src/shaders/vertices.vs", "src/shaders/light.fs");
-
-    if (!shader.isValid())
-    {
-        std::cerr << "Vertex or fragment shaders were invalid" << std::endl;
-        return -1;
-    }
-
-    std::string modelPath = std::filesystem::path("src/models/backpack/backpack.obj");
-    Model backpack(modelPath);
+    std::string modelPath = std::filesystem::path("src/models/ellie_animation.obj");
+    Model object(modelPath);
+    object.setDefaultShaders(defaultShader);
+    object.buildOptimalShaders();
 
     Camera camera;
 
@@ -113,12 +107,6 @@ int main()
         glClearColor(BACKGROUND_COLOR.r, BACKGROUND_COLOR.g, BACKGROUND_COLOR.b, BACKGROUND_COLOR.a);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        shader.bindTextures();
-
-        shader.use();
-        shader.setVec3("light.position", light.position);
-        shader.setVec3("viewPos", camera.getPosition());
-
         // light properties
         glm::vec3 lightColor = light.color;
         // lightColor.r = static_cast<float>(sin(glfwGetTime() * 2.0));
@@ -126,21 +114,30 @@ int main()
         // lightColor.b = static_cast<float>(sin(glfwGetTime() * 1.3));
         glm::vec3 diffuseColor = lightColor * glm::vec3(0.5f);   // decrease the influence
         glm::vec3 ambientColor = diffuseColor * glm::vec3(0.2f); // low influence
-        shader.setVec3("light.ambient", ambientColor);
-        shader.setVec3("light.diffuse", diffuseColor);
-        shader.setVec3("light.specular", {1.0f, 1.0f, 1.0f});
 
         // create transformations
         glm::mat4 projection = glm::perspective(camera.getFOV(), (float)SCRN_WIDTH / (float)SCRN_HEIGHT, 0.1f, 100.0f);
         glm::mat4 view = camera.getView();
-        shader.setTransform("projection", projection);
-        shader.setTransform("view", view);
 
         glm::mat4 model = glm::mat4(1.0f);
         model = glm::translate(model, position);
-        shader.setTransform("model", model);
 
-        backpack.draw(shader);
+        for (auto mesh : object.meshes) {
+            auto shader = mesh.shader;
+            mesh.shader->bindTextures();
+
+            mesh.shader->use();
+            mesh.shader->setVec3("light.position", light.position);
+            mesh.shader->setVec3("viewPos", camera.getPosition());
+            mesh.shader->setVec3("light.ambient", ambientColor);
+            mesh.shader->setVec3("light.diffuse", diffuseColor);
+            mesh.shader->setVec3("light.specular", {1.0f, 1.0f, 1.0f});
+            mesh.shader->setTransform("projection", projection);
+            mesh.shader->setTransform("view", view);
+            mesh.shader->setTransform("model", model);
+        }
+
+        object.draw();
 
         lightShader.use();
         lightShader.setTransform("projection", projection);

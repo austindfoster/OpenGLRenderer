@@ -2,6 +2,8 @@
 
 #include <vector>
 #include <glm/glm.hpp>
+#include <material.h>
+#include <texture.h>
 
 #define MAX_BONE_INFLUENCE 4
 
@@ -25,34 +27,20 @@ struct Vertex
     float weights[MAX_BONE_INFLUENCE];
 };
 
-struct Material
-{
-    unsigned int id;
-    glm::vec3 diffuse = {0.800000f, 0.077166f, 0.737119f};
-    glm::vec3 specular = {0.5f, 0.5f, 0.5f};
-    glm::vec3 ambient = {1.0f, 1.0f, 1.0f};
-    glm::vec3 emmisive = {0.0f, 0.0f, 0.0f};
-    glm::vec3 transparent;
-    glm::vec3 reflective;
-};
-
-struct Texture
-{
-    unsigned int id;
-    std::string type;
-    std::string path;
-};
-
 class Mesh
 {
 public:
-    Mesh(std::vector<Vertex> vertexList, std::vector<unsigned int> indexList, Material mat, std::vector<Texture> textureList);
+    Mesh(std::vector<Vertex> vertexList, std::vector<unsigned int> indexList, Material mat, std::vector<Texture> textureList, Shader *shader = nullptr);
 
-    void draw(Shader &shader);
+    void draw();
+    void setShader(Shader *shdr);
+    void buildOptimalShader();
+
 
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
     Material material;
+    Shader *shader;
     std::vector<Texture> textures;
     unsigned int VAO;
 

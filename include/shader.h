@@ -14,7 +14,7 @@ struct Color
 class Shader
 {
 public:
-    Shader(const char *vertexPath, const char *fragPath);
+    explicit Shader(const char *vertexPath, const char *fragPath);
     ~Shader();
 
     void use();

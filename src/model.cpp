@@ -9,11 +9,25 @@ Model::Model(const std::string &path)
     loadModel(path);
 }
 
-void Model::draw(Shader &shader)
+void Model::draw()
 {
     for (unsigned int i = 0; i < meshes.size(); i++)
     {
-        meshes[i].draw(shader);
+        meshes[i].draw();
+    }
+}
+
+void Model::buildOptimalShaders() {
+    for (unsigned int i = 0; i < meshes.size(); i++)
+    {
+        meshes[i].buildOptimalShader();
+    }
+}
+
+void Model::setDefaultShaders(Shader *shader) {
+    for (unsigned int i = 0; i < meshes.size(); i++)
+    {
+        meshes[i].setShader(shader);
     }
 }
 
@@ -115,7 +129,7 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
     aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
 
     aiColor3D diffuse, specular, ambient, emmisive, transparent, reflective;
-    
+
     material->Get(AI_MATKEY_COLOR_DIFFUSE, diffuse);
     material->Get(AI_MATKEY_COLOR_SPECULAR, specular);
     material->Get(AI_MATKEY_COLOR_AMBIENT, ambient);
@@ -176,4 +190,8 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType 
         }
     }
     return textures;
+}
+
+bool Model::hasTextures() {
+    return !textures_loaded.empty();
 }
